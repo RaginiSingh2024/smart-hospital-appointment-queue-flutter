@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/🎨%20Figma%20Design-View%20Design-8B5CF6?style=for-the-badge" alt="Figma Design">
   </a>
   &nbsp;
-  <a href="https://docs.google.com/document/d/1eiYQcvVTjwRtYDwx9UrUwjleejZ6VAGa2j5WTKpSyL0/edit?usp=sharing">
+  <a href="https://docs.google.com/document/d/1eiYQcvVTjwRtYDwx9UrUwjleejZ6VAGa2j5WTkPsyL0/edit?usp=sharing">
     <img src="https://img.shields.io/badge/📄%20Documentation-View%20Documentation-059669?style=for-the-badge" alt="Documentation">
   </a>
   &nbsp;
