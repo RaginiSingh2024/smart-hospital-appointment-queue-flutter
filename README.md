@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://stitch.withgoogle.com/projects/6637076470176643694">
+  <a href="https://smart-hospital-appointment-queue-fl.vercel.app">
     <img src="https://img.shields.io/badge/🚀%20Live%20Demo-Open%20Application-2563EB?style=for-the-badge" alt="Live Demo">
   </a>
   &nbsp;
@@ -473,7 +473,7 @@ The project documentation/report contains the problem understanding, application
 
 ## 🔗 Project Links
 
-- 🚀 **Live Demo:** https://stitch.withgoogle.com/projects/6637076470176643694
+- 🚀 **Live Demo:** https://smart-hospital-appointment-queue-fl.vercel.app
 - 🎨 **Design:** https://stitch.withgoogle.com/projects/6637076470176643694
 - 💻 **GitHub Repository:** https://github.com/RaginiSingh2024/smart-hospital-appointment-queue-flutter
 - 📄 **Documentation:** https://docs.google.com/document/d/1eiYQcvVTjwRtYDwx9UrUwjleejZ6VAGa2j5WTKpSyL0/edit?usp=sharing
