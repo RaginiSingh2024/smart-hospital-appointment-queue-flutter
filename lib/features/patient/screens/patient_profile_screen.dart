@@ -15,120 +15,48 @@ class PatientProfileScreen extends ConsumerStatefulWidget {
 class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
   bool _soundAlerts = true;
   bool _smsReminders = true;
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  bool _isEditing = false;
 
-  void _showRoleSwitcher(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.swap_horiz_rounded, color: AppColors.primary, size: 24),
-                const SizedBox(width: 10),
-                Text('Quick Role Switcher', style: AppTextStyles.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Switch account persona instantly for presentation demo',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-
-            // Patient
-            _roleOption(
-              ctx,
-              name: 'Arjun Sharma',
-              role: 'Patient (Self-Service & Live Queue)',
-              icon: Icons.person_rounded,
-              color: AppColors.primary,
-              email: 'patient@hospital.com',
-              route: '/patient',
-            ),
-            const SizedBox(height: 10),
-
-            // Doctor
-            _roleOption(
-              ctx,
-              name: 'Dr. Priya Mehta',
-              role: 'Doctor (OPD Queue Control & Rx)',
-              icon: Icons.medical_services_rounded,
-              color: AppColors.secondary,
-              email: 'doctor@hospital.com',
-              route: '/doctor',
-            ),
-            const SizedBox(height: 10),
-
-            // Admin
-            _roleOption(
-              ctx,
-              name: 'Ravi Krishnan',
-              role: 'Hospital Admin (Live Command Center)',
-              icon: Icons.admin_panel_settings_rounded,
-              color: AppColors.accent,
-              email: 'admin@hospital.com',
-              route: '/admin',
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(currentUserProvider);
+    if (user != null) {
+      final nameParts = user.name.split(' ');
+      _firstNameController.text = nameParts.isNotEmpty ? nameParts[0] : '';
+      _lastNameController.text = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+      _phoneController.text = user.phone ?? '';
+    }
   }
 
-  Widget _roleOption(
-    BuildContext ctx, {
-    required String name,
-    required String role,
-    required IconData icon,
-    required Color color,
-    required String email,
-    required String route,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: () async {
-        Navigator.pop(ctx);
-        final success = await ref.read(authNotifierProvider.notifier).login(email, 'password123');
-        if (success && mounted) {
-          context.go(route);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: color,
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w800)),
-                  Text(role, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textLight),
-          ],
-        ),
-      ),
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveProfile() async {
+    final success = await ref.read(authNotifierProvider.notifier).updateProfile(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      phone: _phoneController.text.trim(),
     );
+
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+      setState(() => _isEditing = false);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update profile')),
+      );
+    }
   }
 
   @override
@@ -146,9 +74,14 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Switch Demo Role',
-            icon: const Icon(Icons.switch_account_rounded),
-            onPressed: () => _showRoleSwitcher(context),
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              if (_isEditing) {
+                _saveProfile();
+              } else {
+                setState(() => _isEditing = true);
+              }
+            },
           ),
         ],
       ),
@@ -174,9 +107,9 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                 CircleAvatar(
                   radius: 36,
                   backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  child: const Text(
-                    'AS',
-                    style: TextStyle(
+                  child: Text(
+                    user?.name.isNotEmpty == true ? user!.name.substring(0, 1).toUpperCase() : 'P',
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
@@ -188,10 +121,34 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        user?.name ?? 'Arjun Sharma',
-                        style: AppTextStyles.headlineSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w900),
-                      ),
+                      if (_isEditing) ...[
+                        TextField(
+                          controller: _firstNameController,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                          decoration: const InputDecoration(
+                            hintText: 'First Name',
+                            hintStyle: TextStyle(color: Colors.white54),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white54)),
+                            contentPadding: EdgeInsets.symmetric(vertical: 4),
+                          ),
+                        ),
+                        TextField(
+                          controller: _lastNameController,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                          decoration: const InputDecoration(
+                            hintText: 'Last Name',
+                            hintStyle: TextStyle(color: Colors.white54),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white54)),
+                            contentPadding: EdgeInsets.symmetric(vertical: 4),
+                          ),
+                        ),
+                      ] else
+                        Text(
+                          user?.name ?? 'Patient',
+                          style: AppTextStyles.headlineSmall.copyWith(color: Colors.white, fontWeight: FontWeight.w900),
+                        ),
                       const SizedBox(height: 4),
                       Text(
                         'UHID: ${patient != null ? "UHID-${patient.id.toUpperCase()}" : "UHID-2024-001"}',
@@ -203,10 +160,23 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        user?.email ?? 'patient@hospital.com',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
+                      if (_isEditing)
+                        TextField(
+                          controller: _phoneController,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          decoration: const InputDecoration(
+                            hintText: 'Phone',
+                            hintStyle: TextStyle(color: Colors.white54),
+                            border: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white54)),
+                            contentPadding: EdgeInsets.symmetric(vertical: 4),
+                          ),
+                        )
+                      else
+                        Text(
+                          user?.phone ?? user?.email ?? '',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
                     ],
                   ),
                 ),
@@ -299,19 +269,6 @@ class _PatientProfileScreenState extends ConsumerState<PatientProfileScreen> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Demo Mode Persona Switcher Button
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(50),
-              side: const BorderSide(color: AppColors.primary),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            icon: const Icon(Icons.swap_calls_rounded, color: AppColors.primary),
-            label: const Text('Switch Persona / Test Role', style: TextStyle(fontWeight: FontWeight.w700)),
-            onPressed: () => _showRoleSwitcher(context),
-          ),
-          const SizedBox(height: 12),
 
           // Logout Button
           ElevatedButton.icon(

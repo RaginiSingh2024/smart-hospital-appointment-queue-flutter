@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/appointment.dart';
 import '../models/queue.dart';
-import '../models/notification_model.dart';
 import 'repository_providers.dart';
 import 'auth_provider.dart';
 
@@ -14,10 +13,10 @@ const _uuid = Uuid();
 final patientAppointmentsProvider = FutureProvider<List<Appointment>>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return [];
-  // Get patient id from mock data
-  final patient = ref.watch(currentPatientProvider);
-  if (patient == null) return [];
-  return ref.watch(appointmentRepositoryProvider).getAppointmentsByPatient(patient.id);
+  print('[APPOINTMENT PROVIDER] Getting appointments for patient: ${user.id}');
+  final appointments = await ref.watch(appointmentRepositoryProvider).getAppointmentsByPatient(user.id);
+  print('[APPOINTMENT PROVIDER] Retrieved ${appointments.length} appointments for patient');
+  return appointments;
 });
 
 final doctorAppointmentsProvider = FutureProvider<List<Appointment>>((ref) async {
@@ -25,7 +24,10 @@ final doctorAppointmentsProvider = FutureProvider<List<Appointment>>((ref) async
   if (user == null) return [];
   final doctor = await ref.watch(doctorByUserIdFutureProvider.future);
   if (doctor == null) return [];
-  return ref.watch(appointmentRepositoryProvider).getAppointmentsByDoctor(doctor.id);
+  print('[APPOINTMENT PROVIDER] Getting appointments for doctor: ${doctor.id}');
+  final appointments = await ref.watch(appointmentRepositoryProvider).getAppointmentsByDoctor(doctor.id);
+  print('[APPOINTMENT PROVIDER] Retrieved ${appointments.length} appointments for doctor');
+  return appointments;
 });
 
 final doctorByUserIdFutureProvider = FutureProvider<dynamic>((ref) async {
@@ -66,7 +68,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      final repo = _ref.read(mockAppointmentRepositoryProvider);
+      print('[APPOINTMENT NOTIFIER] Booking appointment for patient: $patientId, doctor: $doctorId');
       final dateStr = DateFormat('yyyy-MM-dd').format(appointmentDate);
 
       // Check if slot is already booked
@@ -74,12 +76,17 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
           .read(appointmentRepositoryProvider)
           .isSlotBooked(doctorId, dateStr, timeSlot);
       if (isBooked) {
+        print('[APPOINTMENT NOTIFIER] Slot already booked');
         state = AsyncValue.error('This slot is already booked. Please select another.', StackTrace.current);
         return null;
       }
 
-      final sequence = repo.getNextTokenSequence(doctorId, dateStr);
-      final tokenNumber = repo.generateTokenNumber(doctorId, sequence);
+      // Get existing appointments count for token generation
+      final existingAppointments = await _ref
+          .read(appointmentRepositoryProvider)
+          .getAppointmentsByDate(dateStr);
+      final sequence = existingAppointments.length + 1;
+      final tokenNumber = 'A-${sequence.toString().padLeft(3, '0')}';
       final convenienceFee = 30.0;
       final priorityFee = consultationType.additionalFee;
       final totalAmount = consultationFee + convenienceFee + priorityFee;
@@ -115,45 +122,38 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
         estimatedWaitMinutes: sequence * 15,
       );
 
+      print('[APPOINTMENT NOTIFIER] Creating appointment in Firestore');
       final created = await _ref
           .read(appointmentRepositoryProvider)
           .createAppointment(appointment);
 
-      // Book the slot
+      // Book the slot in Firestore
       await _ref.read(doctorRepositoryProvider).bookSlot(doctorId, dateStr, timeSlot, appointmentId);
 
-      // Add to queue
-      final queueRepo = _ref.read(mockQueueRepositoryProvider);
-      queueRepo.addToQueue(QueueModel(
-        id: _uuid.v4(),
-        appointmentId: appointmentId,
+      // Add patient to queue
+      final queueRepo = _ref.read(queueRepositoryProvider);
+      await queueRepo.addToQueue(
         doctorId: doctorId,
-        patientId: patientId,
-        patientName: patientName,
-        tokenNumber: tokenNumber,
-        tokenSequence: sequence,
-        status: QueueStatus.waiting,
-        patientsAhead: sequence - 1,
-        estimatedWaitMinutes: (sequence - 1) * 15,
         date: dateStr,
-      ));
+        queueModel: QueueModel(
+          id: 'queue_${appointmentId}',
+          appointmentId: appointmentId,
+          doctorId: doctorId,
+          patientId: patientId,
+          patientName: patientName,
+          tokenNumber: tokenNumber,
+          tokenSequence: sequence,
+          status: QueueStatus.waiting,
+          patientsAhead: 0,
+          estimatedWaitMinutes: sequence * 15,
+          avgConsultationMinutes: 15,
+          date: dateStr,
+          isEmergency: consultationType == ConsultationType.emergency,
+          queuePosition: sequence,
+        ),
+      );
 
-      // Send notifications
-      final notifRepo = _ref.read(mockNotificationRepositoryProvider);
-      await notifRepo.createNotification(
-        userId: patientId,
-        title: 'Appointment Confirmed ✅',
-        body: 'Your appointment with $doctorName is confirmed for ${DateFormat('dd MMM yyyy').format(appointmentDate)} at $timeSlot. Token: $tokenNumber',
-        type: NotificationType.appointmentConfirmed,
-        appointmentId: appointmentId,
-      );
-      await notifRepo.createNotification(
-        userId: patientId,
-        title: 'Payment Successful 💳',
-        body: 'Payment of ₹${totalAmount.toStringAsFixed(0)} received. Transaction ID: $transactionId',
-        type: NotificationType.paymentSuccess,
-        appointmentId: appointmentId,
-      );
+      print('[APPOINTMENT NOTIFIER] Appointment created successfully: $appointmentId');
 
       // Refresh providers
       _ref.invalidate(patientAppointmentsProvider);
@@ -162,6 +162,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null);
       return created;
     } catch (e, st) {
+      print('[APPOINTMENT NOTIFIER] Error booking appointment: $e');
       state = AsyncValue.error(e, st);
       return null;
     }
@@ -170,22 +171,14 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> cancelAppointment(String appointmentId, String patientId) async {
     state = const AsyncValue.loading();
     try {
+      print('[APPOINTMENT NOTIFIER] Cancelling appointment: $appointmentId');
       await _ref.read(appointmentRepositoryProvider).cancelAppointment(appointmentId);
-
-      final notifRepo = _ref.read(mockNotificationRepositoryProvider);
-      await notifRepo.createNotification(
-        userId: patientId,
-        title: 'Appointment Cancelled',
-        body: 'Your appointment has been cancelled successfully.',
-        type: NotificationType.appointmentCancelled,
-        appointmentId: appointmentId,
-      );
-
       _ref.invalidate(patientAppointmentsProvider);
       _ref.invalidate(allAppointmentsProvider);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
+      print('[APPOINTMENT NOTIFIER] Error cancelling appointment: $e');
       state = AsyncValue.error(e, st);
       return false;
     }
@@ -195,24 +188,16 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
       String appointmentId, DateTime newDate, String newTimeSlot, String patientId) async {
     state = const AsyncValue.loading();
     try {
+      print('[APPOINTMENT NOTIFIER] Rescheduling appointment: $appointmentId');
       final appointment = await _ref
           .read(appointmentRepositoryProvider)
           .rescheduleAppointment(appointmentId, newDate, newTimeSlot);
-
-      final notifRepo = _ref.read(mockNotificationRepositoryProvider);
-      await notifRepo.createNotification(
-        userId: patientId,
-        title: 'Appointment Rescheduled 📅',
-        body: 'Your appointment has been rescheduled to ${DateFormat('dd MMM yyyy').format(newDate)} at $newTimeSlot.',
-        type: NotificationType.appointmentRescheduled,
-        appointmentId: appointmentId,
-      );
-
       _ref.invalidate(patientAppointmentsProvider);
       _ref.invalidate(allAppointmentsProvider);
       state = const AsyncValue.data(null);
       return appointment;
     } catch (e, st) {
+      print('[APPOINTMENT NOTIFIER] Error rescheduling appointment: $e');
       state = AsyncValue.error(e, st);
       return null;
     }
@@ -221,22 +206,13 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> checkIn(String appointmentId, String patientId) async {
     state = const AsyncValue.loading();
     try {
+      print('[APPOINTMENT NOTIFIER] Checking in appointment: $appointmentId');
       await _ref.read(appointmentRepositoryProvider).checkIn(appointmentId);
-      await _ref.read(queueRepositoryProvider).checkInPatient(appointmentId);
-
-      final notifRepo = _ref.read(mockNotificationRepositoryProvider);
-      await notifRepo.createNotification(
-        userId: patientId,
-        title: 'Check-in Successful ✔️',
-        body: 'You have checked in successfully. Please wait for your token to be called.',
-        type: NotificationType.checkedIn,
-        appointmentId: appointmentId,
-      );
-
       _ref.invalidate(patientAppointmentsProvider);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
+      print('[APPOINTMENT NOTIFIER] Error checking in appointment: $e');
       state = AsyncValue.error(e, st);
       return false;
     }
@@ -245,12 +221,14 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> startConsultation(String appointmentId) async {
     state = const AsyncValue.loading();
     try {
+      print('[APPOINTMENT NOTIFIER] Starting consultation: $appointmentId');
       await _ref.read(appointmentRepositoryProvider).startConsultation(appointmentId);
       _ref.invalidate(doctorAppointmentsProvider);
       _ref.invalidate(allAppointmentsProvider);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
+      print('[APPOINTMENT NOTIFIER] Error starting consultation: $e');
       state = AsyncValue.error(e, st);
       return false;
     }
@@ -259,23 +237,15 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> completeConsultation(String appointmentId, String patientId) async {
     state = const AsyncValue.loading();
     try {
+      print('[APPOINTMENT NOTIFIER] Completing consultation: $appointmentId');
       await _ref.read(appointmentRepositoryProvider).completeConsultation(appointmentId);
-
-      final notifRepo = _ref.read(mockNotificationRepositoryProvider);
-      await notifRepo.createNotification(
-        userId: patientId,
-        title: 'Consultation Completed 🏥',
-        body: 'Your consultation is complete. View your prescription in Consultation History.',
-        type: NotificationType.consultationCompleted,
-        appointmentId: appointmentId,
-      );
-
       _ref.invalidate(doctorAppointmentsProvider);
       _ref.invalidate(allAppointmentsProvider);
       _ref.invalidate(patientAppointmentsProvider);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
+      print('[APPOINTMENT NOTIFIER] Error completing consultation: $e');
       state = AsyncValue.error(e, st);
       return false;
     }

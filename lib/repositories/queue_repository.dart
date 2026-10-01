@@ -9,4 +9,5 @@ abstract class QueueRepository {
   Future<void> checkInPatient(String appointmentId);
   Stream<DoctorQueue> watchDoctorQueue(String doctorId, String date);
   Stream<QueueModel?> watchPatientQueue(String patientId, String date);
+  Future<void> addToQueue({required String doctorId, required String date, required QueueModel queueModel});
 }

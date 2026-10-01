@@ -16,6 +16,8 @@ class Consultation {
   final bool isPaid;
   final double amountPaid;
   final String paymentMethod;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const Consultation({
     required this.id,
@@ -35,6 +37,8 @@ class Consultation {
     required this.isPaid,
     required this.amountPaid,
     required this.paymentMethod,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Consultation.fromMap(Map<String, dynamic> map) {
@@ -56,6 +60,8 @@ class Consultation {
       isPaid: map['isPaid'] as bool,
       amountPaid: (map['amountPaid'] as num).toDouble(),
       paymentMethod: map['paymentMethod'] as String,
+      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt'] as String) : null,
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt'] as String) : null,
     );
   }
 
@@ -78,6 +84,52 @@ class Consultation {
       'isPaid': isPaid,
       'amountPaid': amountPaid,
       'paymentMethod': paymentMethod,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
+  }
+
+  Consultation copyWith({
+    String? id,
+    String? appointmentId,
+    String? patientId,
+    String? patientName,
+    String? doctorId,
+    String? doctorName,
+    String? doctorSpecialty,
+    String? departmentName,
+    DateTime? consultationDate,
+    String? diagnosis,
+    String? prescription,
+    String? notes,
+    List<String>? medicines,
+    String? followUpDate,
+    bool? isPaid,
+    double? amountPaid,
+    String? paymentMethod,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Consultation(
+      id: id ?? this.id,
+      appointmentId: appointmentId ?? this.appointmentId,
+      patientId: patientId ?? this.patientId,
+      patientName: patientName ?? this.patientName,
+      doctorId: doctorId ?? this.doctorId,
+      doctorName: doctorName ?? this.doctorName,
+      doctorSpecialty: doctorSpecialty ?? this.doctorSpecialty,
+      departmentName: departmentName ?? this.departmentName,
+      consultationDate: consultationDate ?? this.consultationDate,
+      diagnosis: diagnosis ?? this.diagnosis,
+      prescription: prescription ?? this.prescription,
+      notes: notes ?? this.notes,
+      medicines: medicines ?? this.medicines,
+      followUpDate: followUpDate ?? this.followUpDate,
+      isPaid: isPaid ?? this.isPaid,
+      amountPaid: amountPaid ?? this.amountPaid,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

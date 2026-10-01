@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/notification_model.dart';
 import 'repository_providers.dart';
 import 'auth_provider.dart';
+import '../data/remote/firestore_notification_repository.dart';
 
 final notificationsProvider = FutureProvider<List<NotificationModel>>((ref) async {
   final user = ref.watch(currentUserProvider);
@@ -54,4 +55,33 @@ final notificationNotifierProvider =
 
 final notificationActionsProvider = Provider<NotificationNotifier>((ref) {
   return ref.watch(notificationNotifierProvider.notifier);
+});
+
+// Convenience provider for creating notifications
+final notificationCreatorProvider = Provider((ref) {
+  final repo = ref.read(notificationRepositoryProvider);
+  return ({
+    required String userId,
+    required String title,
+    required String body,
+    required NotificationType type,
+    String? appointmentId,
+    Map<String, dynamic>? metadata,
+  }) async {
+    // Since FirestoreNotificationRepository has the createNotification helper,
+    // we'll use the repository directly
+    if (repo is FirestoreNotificationRepository) {
+      await (repo as FirestoreNotificationRepository).createNotification(
+        userId: userId,
+        title: title,
+        body: body,
+        type: type,
+        appointmentId: appointmentId,
+        metadata: metadata,
+      );
+    } else {
+      // Fallback for mock implementation
+      print('[NOTIFICATION] Create notification called for user: $userId');
+    }
+  };
 });

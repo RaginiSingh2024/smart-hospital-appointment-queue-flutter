@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "363627873062",
+    "project_id": "smart-hospital-queue-d287d",
+    "storage_bucket": "smart-hospital-queue-d287d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:363627873062:android:35b22d83b3f358d16c77e7",
+        "android_client_info": {
+          "package_name": "com.hospital.smart_hospital_queue_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTvESfNNTfjbLiguJn2d9SsXWnkEBoGdc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

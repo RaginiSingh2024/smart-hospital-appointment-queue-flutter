@@ -20,6 +20,8 @@ class Doctor {
   final String email;
   final String phone;
   final String? roomNumber;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const Doctor({
     required this.id,
@@ -43,6 +45,8 @@ class Doctor {
     required this.email,
     required this.phone,
     this.roomNumber,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Doctor.fromMap(Map<String, dynamic> map) {
@@ -72,6 +76,8 @@ class Doctor {
       email: map['email'] as String,
       phone: map['phone'] as String,
       roomNumber: map['roomNumber'] as String?,
+      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt'] as String) : null,
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt'] as String) : null,
     );
   }
 
@@ -98,6 +104,8 @@ class Doctor {
       'email': email,
       'phone': phone,
       'roomNumber': roomNumber,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -131,6 +139,8 @@ class Doctor {
     String? email,
     String? phone,
     String? roomNumber,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Doctor(
       id: id ?? this.id,
@@ -154,6 +164,8 @@ class Doctor {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       roomNumber: roomNumber ?? this.roomNumber,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
