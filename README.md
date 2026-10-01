@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://raginisingh2024.github.io/smart-hospital-appointment-queue-flutter/">
+  <a href="https://stitch.withgoogle.com/projects/6637076470176643694">
     <img src="https://img.shields.io/badge/🚀%20Live%20Demo-Open%20Application-2563EB?style=for-the-badge" alt="Live Demo">
   </a>
   &nbsp;
@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/🎨%20Figma%20Design-View%20Design-8B5CF6?style=for-the-badge" alt="Figma Design">
   </a>
   &nbsp;
-  <a href="#-documentation">
+  <a href="https://docs.google.com/document/d/1eiYQcvVTjwRtYDwx9UrUwjleejZ6VAGa2j5WTKpSyL0/edit?usp=sharing">
     <img src="https://img.shields.io/badge/📄%20Documentation-View%20Documentation-059669?style=for-the-badge" alt="Documentation">
   </a>
   &nbsp;
@@ -435,9 +435,10 @@ The project documentation/report contains the problem understanding, application
 
 ## 🔗 Project Links
 
-- 🚀 **Live Demo:** https://raginisingh2024.github.io/smart-hospital-appointment-queue-flutter/
+- 🚀 **Live Demo:** https://stitch.withgoogle.com/projects/6637076470176643694
 - 🎨 **Design:** https://stitch.withgoogle.com/projects/6637076470176643694
 - 💻 **GitHub Repository:** https://github.com/RaginiSingh2024/smart-hospital-appointment-queue-flutter
+- 📄 **Documentation:** https://docs.google.com/document/d/1eiYQcvVTjwRtYDwx9UrUwjleejZ6VAGa2j5WTKpSyL0/edit?usp=sharing
 
 ## 📌 Project Information
 
