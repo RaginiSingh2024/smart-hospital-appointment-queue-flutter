@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:rxdart/rxdart.dart';
 import '../../models/queue.dart';
 import '../../repositories/queue_repository.dart';
 import '../mock/mock_data.dart';
 
 class MockQueueRepository implements QueueRepository {
   final Map<String, List<QueueModel>> _queues = {};
-  final Map<String, StreamController<DoctorQueue>> _queueControllers = {};
+  final Map<String, BehaviorSubject<DoctorQueue>> _queueControllers = {};
   final Map<String, StreamController<QueueModel?>> _patientControllers = {};
 
   MockQueueRepository() {
@@ -20,6 +21,9 @@ class MockQueueRepository implements QueueRepository {
 
     _queues['doc_001_$today'] = MockData.getDoctorQueue('doc_001', today);
     _queues['doc_001_$tomorrow'] = MockData.getDoctorQueue('doc_001', tomorrow);
+    // Initialize queue for Firebase doctor
+    _queues['doc_firebase_001_$today'] = []; // Empty queue for new doctor
+    _queues['doc_firebase_001_$tomorrow'] = [];
   }
 
   String _key(String doctorId, String date) => '${doctorId}_$date';
@@ -184,17 +188,28 @@ class MockQueueRepository implements QueueRepository {
     }
   }
 
-  void addToQueue(QueueModel queueModel) {
-    final key = _key(queueModel.doctorId, queueModel.date);
+  @override
+  Future<void> addToQueue({
+    required String doctorId,
+    required String date,
+    required QueueModel queueModel,
+  }) async {
+    final key = _key(doctorId, date);
     _queues[key] ??= [];
     _queues[key]!.add(queueModel);
-    _notifyDoctorQueueChange(queueModel.doctorId, queueModel.date);
+    _notifyDoctorQueueChange(doctorId, date);
   }
 
   @override
   Stream<DoctorQueue> watchDoctorQueue(String doctorId, String date) {
     final key = _key(doctorId, date);
-    _queueControllers[key] ??= StreamController<DoctorQueue>.broadcast();
+    print('[DOCTOR] QUEUE REPO: watchDoctorQueue called for doctorId=$doctorId, date=$date, key=$key');
+    _queueControllers[key] ??= BehaviorSubject<DoctorQueue>();
+    // Add initial value to BehaviorSubject
+    final initialQueue = _buildDoctorQueue(doctorId, date);
+    print('[DOCTOR] QUEUE REPO: Built initial queue with ${initialQueue.waitingPatients} waiting patients');
+    _queueControllers[key]!.add(initialQueue);
+    print('[DOCTOR] QUEUE REPO: Initial queue data added to BehaviorSubject');
     return _queueControllers[key]!.stream;
   }
 

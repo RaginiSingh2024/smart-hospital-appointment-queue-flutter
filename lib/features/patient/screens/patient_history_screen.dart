@@ -4,12 +4,18 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
-import '../../../data/mock/mock_data.dart';
 import '../../../models/consultation.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/repository_providers.dart';
 
-class PatientHistoryScreen extends ConsumerWidget {
+class PatientHistoryScreen extends ConsumerStatefulWidget {
   const PatientHistoryScreen({super.key});
 
+  @override
+  ConsumerState<PatientHistoryScreen> createState() => _PatientHistoryScreenState();
+}
+
+class _PatientHistoryScreenState extends ConsumerState<PatientHistoryScreen> {
   void _showPrescriptionModal(BuildContext context, Consultation consultation) {
     showModalBottomSheet(
       context: context,
@@ -143,8 +149,9 @@ class PatientHistoryScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final consultations = MockData.consultations;
+  Widget build(BuildContext context) {
+    final user = ref.watch(currentUserProvider);
+    final consultationsAsync = ref.watch(_consultationsProvider(user?.id ?? ''));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -155,81 +162,128 @@ class PatientHistoryScreen extends ConsumerWidget {
           onPressed: () => context.go('/patient'),
         ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: consultations.length,
-        itemBuilder: (ctx, i) {
-          final c = consultations[i];
-          final dateStr = DateFormat('MMM d, yyyy').format(c.consultationDate);
+      body: consultationsAsync.when(
+        data: (consultations) {
+          if (consultations.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, size: 64, color: AppColors.textSecondary),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No consultation history',
+                    style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            );
+          }
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 14),
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(c.doctorName, style: AppTextStyles.titleMedium),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'COMPLETED',
-                        style: TextStyle(color: AppColors.success, fontSize: 10, fontWeight: FontWeight.w800),
-                      ),
+            itemCount: consultations.length,
+            itemBuilder: (ctx, i) {
+              final c = consultations[i];
+              final dateStr = DateFormat('MMM d, yyyy').format(c.consultationDate);
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${c.doctorSpecialty} • $dateStr',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 10),
-                Text('Diagnosis: ${c.diagnosis}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(
-                  'Prescription: ${c.medicines.join(", ")}',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      ),
-                      icon: const Icon(Icons.receipt_long_rounded, size: 16),
-                      label: const Text('View Digital Rx', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                      onPressed: () => _showPrescriptionModal(context, c),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(c.doctorName, style: AppTextStyles.titleMedium),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'COMPLETED',
+                            style: TextStyle(color: AppColors.success, fontSize: 10, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${c.doctorSpecialty} • $dateStr',
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 10),
+                    Text('Diagnosis: ${c.diagnosis}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Prescription: ${c.medicines.join(", ")}',
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          ),
+                          icon: const Icon(Icons.receipt_long_rounded, size: 16),
+                          label: const Text('View Digital Rx', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                          onPressed: () => _showPrescriptionModal(context, c),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              );
+            },
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load consultations',
+                style: AppTextStyles.titleMedium.copyWith(color: AppColors.error),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: AppTextStyles.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
+
+// Provider for consultations
+final _consultationsProvider = FutureProvider.family<List<Consultation>, String>((ref, patientId) async {
+  if (patientId.isEmpty) return [];
+  final repo = ref.read(consultationRepositoryProvider);
+  return repo.getConsultationsByPatient(patientId);
+});

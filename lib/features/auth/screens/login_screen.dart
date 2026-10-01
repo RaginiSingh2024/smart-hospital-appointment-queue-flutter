@@ -7,10 +7,11 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../models/user.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../data/mock/mock_data.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  final bool initialRegistration;
+
+  const LoginScreen({super.key, this.initialRegistration = false});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -19,9 +20,16 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  late bool _isRegistering;
+  bool _registrationComplete = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -29,6 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void initState() {
     super.initState();
+    _isRegistering = widget.initialRegistration;
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -49,43 +58,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _phoneController.dispose();
     _animationController.dispose();
     super.dispose();
-  }
-
-  void _fillDemo(String email, String password) {
-    _emailController.text = email;
-    _passwordController.text = password;
   }
 
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final success = await ref.read(authProvider.notifier).signIn(
+        final success = await ref.read(authProvider.notifier).signInForRole(
           _emailController.text.trim(),
           _passwordController.text,
+          UserRole.patient,
         );
 
     if (!mounted) return;
 
-    if (success) {
-      final role = ref.read(authProvider).role;
-      switch (role) {
-        case UserRole.patient:
-          context.go('/patient');
-          break;
-        case UserRole.doctor:
-          context.go('/doctor');
-          break;
-        case UserRole.admin:
-          context.go('/admin');
-          break;
-        case null:
-          break;
-      }
+    if (success) context.go('/patient');
+  }
+
+  Future<void> _registerPatient() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    print('🔥 RegisterPatient button clicked');
+    print('🔥 Email: ${_emailController.text.trim()}');
+    print('🔥 First Name: ${_firstNameController.text.trim()}');
+    print('🔥 Last Name: ${_lastNameController.text.trim()}');
+
+    final success = await ref.read(authProvider.notifier).registerPatient(
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          phone: _phoneController.text.trim(),
+        );
+
+    print('🔥 Registration success: $success');
+    if (!mounted || !success) return;
+    setState(() => _registrationComplete = true);
+  }
+
+  void _toggleRegistration() {
+    print('🔥 _toggleRegistration called, _isRegistering: $_isRegistering');
+    if (_isRegistering) {
+      print('🔥 Navigating to /login');
+      context.go('/login');
+      return;
     }
+    print('🔥 Navigating to /patient-register');
+    context.go('/patient-register');
   }
 
   @override
@@ -115,7 +141,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           children: [
             // Hero Section
             Container(
-              height: size.height * 0.38,
+              height: size.height * 0.34,
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: AppColors.heroGradient,
@@ -132,8 +158,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     children: [
                       // Logo
                       Container(
-                        width: 80,
-                        height: 80,
+                        width: 72,
+                        height: 72,
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
@@ -143,10 +169,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         child: const Icon(
                           Icons.local_hospital_rounded,
                           color: Colors.white,
-                          size: 44,
+                          size: 40,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
                       const Text(
                         'MediQueue',
                         style: TextStyle(
@@ -167,6 +193,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           color: Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Smart Healthcare. Smarter Queues.',
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          letterSpacing: 0.2,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -179,21 +216,98 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 560),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.divider),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.shadow.withValues(alpha: 0.08),
+                              blurRadius: 24,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                         const SizedBox(height: 8),
-                        Text('Welcome Back', style: AppTextStyles.displaySmall),
+                        Text(
+                          _isRegistering ? 'Create Patient Account' : 'Welcome Back',
+                          style: AppTextStyles.displaySmall,
+                        ),
                         const SizedBox(height: 4),
                         Text(
-                          'Sign in to access your healthcare portal',
+                          _isRegistering
+                              ? 'Create your secure MediQueue patient account'
+                              : 'Sign in to access your healthcare portal',
                           style: AppTextStyles.bodyMedium
                               .copyWith(color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 28),
+
+                        if (_registrationComplete) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.success.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Text(
+                              'Account created successfully!',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          AppButton(
+                            label: 'Continue to Patient Login',
+                            onPressed: () => context.go('/login'),
+                          ),
+                        ] else ...[
+                        if (_isRegistering) ...[
+                          AppTextField(
+                            controller: _firstNameController,
+                            label: 'First Name',
+                            hint: 'Enter your first name',
+                            prefixIcon: Icons.person_outline_rounded,
+                            textInputAction: TextInputAction.next,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'First name is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _lastNameController,
+                            label: 'Last Name',
+                            hint: 'Enter your last name',
+                            prefixIcon: Icons.person_outline_rounded,
+                            textInputAction: TextInputAction.next,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Last name is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
                         AppTextField(
                           controller: _emailController,
@@ -217,7 +331,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           prefixIcon: Icons.lock_outline_rounded,
                           obscureText: _obscurePassword,
                           textInputAction: TextInputAction.done,
-                          onSubmitted: (_) => _signIn(),
+                            onSubmitted: (_) =>
+                              _isRegistering ? _registerPatient() : _signIn(),
                           suffix: IconButton(
                             icon: Icon(
                               _obscurePassword
@@ -238,139 +353,119 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             return null;
                           },
                         ),
+                        if (_isRegistering) ...[
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _confirmPasswordController,
+                            label: 'Confirm password',
+                            hint: 'Re-enter your password',
+                            prefixIcon: Icons.lock_reset_outlined,
+                            obscureText: _obscureConfirmPassword,
+                            textInputAction: TextInputAction.next,
+                            suffix: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: AppColors.textSecondary,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
+                                });
+                              },
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please confirm your password';
+                              }
+                              if (value != _passwordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _phoneController,
+                            label: 'Phone number (optional)',
+                            hint: 'Enter your phone number',
+                            prefixIcon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.done,
+                          ),
+                        ],
                         const SizedBox(height: 28),
 
                         AppButton(
-                          label: 'Sign In',
-                          onPressed: authState.isLoading ? null : _signIn,
+                          label: _isRegistering ? 'Create Account' : 'Sign In',
+                          onPressed: authState.isLoading
+                              ? null
+                              : (_isRegistering ? _registerPatient : _signIn),
                           isLoading: authState.isLoading,
                         ),
                         const SizedBox(height: 24),
 
-                        // Demo Accounts
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.divider),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.info_outline_rounded,
-                                      color: AppColors.primary, size: 18),
-                                  const SizedBox(width: 8),
-                                  Text('Demo Accounts',
-                                      style: AppTextStyles.titleSmall
-                                          .copyWith(color: AppColors.primary)),
-                                ],
+                        Center(
+                          child: TextButton(
+                            onPressed: authState.isLoading
+                                ? null
+                                : _toggleRegistration,
+                            child: Text(
+                              _isRegistering
+                                  ? 'Already have an account? Sign In'
+                                  : 'Create Patient Account',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
                               ),
-                              const SizedBox(height: 12),
-                              ...MockData.demoAccounts
-                                  .map((account) => _DemoAccountTile(
-                                        account: account,
-                                        onTap: () => _fillDemo(
-                                            account['email']!,
-                                            account['password']!),
-                                      )),
+                            ),
+                          ),
+                        ),
+                        if (!_isRegistering) ...[
+                          const SizedBox(height: 18),
+                          const Divider(),
+                          const SizedBox(height: 14),
+                          Text('Staff Login', style: AppTextStyles.titleSmall),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    print('🔥 Doctor Login button clicked');
+                                    context.go('/doctor-login');
+                                  },
+                                  icon: const Icon(Icons.medical_services_outlined),
+                                  label: const Text('Doctor Login'),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    print('🔥 Admin Login button clicked');
+                                    context.go('/admin-login');
+                                  },
+                                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                                  label: const Text('Admin Login'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        ],
                             ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DemoAccountTile extends StatelessWidget {
-  final Map<String, String> account;
-  final VoidCallback onTap;
-
-  const _DemoAccountTile({required this.account, required this.onTap});
-
-  Color get _roleColor {
-    switch (account['role']) {
-      case 'patient':
-        return AppColors.success;
-      case 'doctor':
-        return AppColors.primary;
-      case 'admin':
-        return AppColors.secondary;
-      default:
-        return AppColors.primary;
-    }
-  }
-
-  IconData get _roleIcon {
-    switch (account['role']) {
-      case 'patient':
-        return Icons.person_outline_rounded;
-      case 'doctor':
-        return Icons.medical_services_outlined;
-      case 'admin':
-        return Icons.admin_panel_settings_outlined;
-      default:
-        return Icons.person_outline_rounded;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: _roleColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _roleColor.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Icon(_roleIcon, color: _roleColor, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    account['name'] ?? '',
-                    style: AppTextStyles.labelMedium
-                        .copyWith(color: AppColors.textPrimary),
-                  ),
-                  Text(
-                    '${account['email']} • ${account['password']}',
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: _roleColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                account['role']!.toUpperCase(),
-                style: AppTextStyles.caption.copyWith(
-                    color: _roleColor, fontWeight: FontWeight.w700),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.touch_app_outlined, size: 16, color: _roleColor),
           ],
         ),
       ),

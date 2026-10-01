@@ -227,6 +227,33 @@ class MockData {
 
   // ─── Doctors ──────────────────────────────────────────────────────────────
   static final List<Doctor> doctors = [
+    // Firebase doctor account - dr@gmail.com
+    Doctor(
+      id: 'doc_firebase_001',
+      userId: 'nWAhskXQ9ePTwcliHHfFHyfGPw23',
+      name: 'Dr. Staff',
+      specialty: 'General Medicine',
+      departmentId: 'dept_006',
+      departmentName: 'General Medicine',
+      experienceYears: 5,
+      rating: 4.5,
+      reviewCount: 100,
+      consultationFee: 500,
+      qualification: 'MBBS, MD',
+      about: 'General medicine doctor for MediQueue.',
+      isAvailable: true,
+      registrationNumber: 'MED-2024-001',
+      email: 'dr@gmail.com',
+      phone: '+91 9876543299',
+      availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+      weeklySlots: {
+        'Monday': ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00'],
+        'Tuesday': ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00'],
+        'Wednesday': ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'],
+        'Thursday': ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00'],
+        'Friday': ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30'],
+      },
+    ),
     Doctor(
       id: 'doc_001',
       userId: 'user_doc_001',

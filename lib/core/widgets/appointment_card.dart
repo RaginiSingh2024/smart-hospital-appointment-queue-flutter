@@ -21,6 +21,8 @@ class AppointmentStatusBadge extends StatelessWidget {
         return AppColors.statusCompleted;
       case AppointmentStatus.checkedIn:
         return AppColors.statusCheckedIn;
+      case AppointmentStatus.inQueue:
+        return AppColors.accent;
       case AppointmentStatus.inConsultation:
         return AppColors.primary;
       case AppointmentStatus.rescheduled:
@@ -42,6 +44,8 @@ class AppointmentStatusBadge extends StatelessWidget {
         return AppColors.secondarySurface;
       case AppointmentStatus.checkedIn:
         return AppColors.accentSurface;
+      case AppointmentStatus.inQueue:
+        return AppColors.primarySurface;
       case AppointmentStatus.inConsultation:
         return AppColors.primarySurface;
       case AppointmentStatus.rescheduled:

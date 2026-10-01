@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/queue.dart';
-import '../models/notification_model.dart';
 import 'repository_providers.dart';
 import 'auth_provider.dart';
+import '../models/notification_model.dart';
 
 // ─── Queue Providers ──────────────────────────────────────────────────────
 
@@ -25,8 +25,14 @@ final doctorQueueProvider = FutureProvider<DoctorQueue?>((ref) async {
 
 final doctorByUserIdForQueueProvider = FutureProvider<dynamic>((ref) async {
   final user = ref.watch(currentUserProvider);
-  if (user == null) return null;
-  return ref.watch(doctorRepositoryProvider).getDoctorByUserId(user.id);
+  print('🔥 DOCTOR DASHBOARD: Doctor lookup start for user ID: ${user?.id}');
+  if (user == null) {
+    print('🔥 DOCTOR DASHBOARD: User is null');
+    return null;
+  }
+  final doctor = await ref.watch(doctorRepositoryProvider).getDoctorByUserId(user.id);
+  print('🔥 DOCTOR DASHBOARD: Doctor lookup result: ${doctor?.id} - ${doctor?.name}');
+  return doctor;
 });
 
 // Stream-based provider — accepts a doctorId String directly.
@@ -34,7 +40,17 @@ final doctorByUserIdForQueueProvider = FutureProvider<dynamic>((ref) async {
 final doctorQueueStreamProvider = StreamProvider.family<DoctorQueue, String>(
     (ref, doctorId) {
   final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-  return ref.watch(queueRepositoryProvider).watchDoctorQueue(doctorId, today);
+  print('[DOCTOR] QUEUE PROVIDER: doctorId=$doctorId, date=$today');
+  final stream = ref.watch(queueRepositoryProvider).watchDoctorQueue(doctorId, today);
+  print('[DOCTOR] QUEUE PROVIDER: Stream obtained, starting to listen');
+  int emitCount = 0;
+  return stream.map((queue) {
+    emitCount++;
+    print('[DOCTOR] QUEUE PROVIDER: Data emitted #$emitCount - waitingCount=${queue.waitingPatients}');
+    return queue;
+  }).handleError((error) {
+    print('[DOCTOR] QUEUE PROVIDER ERROR: $error');
+  });
 });
 
 final patientQueueStreamProvider = StreamProvider<QueueModel?>((ref) {
@@ -73,15 +89,8 @@ class QueueNotifier extends StateNotifier<AsyncValue<DoctorQueue?>> {
 
       // Notify waiting patients
       final queueData = queue;
-      for (final q in queueData.waitingQueue) {
-        await _ref.read(mockNotificationRepositoryProvider).createNotification(
-          userId: q.patientId,
-          title: 'Queue Update 📋',
-          body: 'Dr. ${queueData.doctorName} is now seeing the next patient. Your token ${q.tokenNumber} - ${q.patientsAhead} patient(s) ahead.',
-          type: NotificationType.queueUpdate,
-          appointmentId: q.appointmentId,
-        );
-      }
+      // Notifications are created via repository when needed
+      print('[QUEUE] Notified ${queueData.waitingQueue.length} waiting patients');
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

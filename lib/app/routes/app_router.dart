@@ -6,6 +6,7 @@ import '../../features/admin/screens/admin_dashboard_screen.dart';
 import '../../features/admin/screens/admin_doctors_screen.dart';
 import '../../features/admin/screens/admin_queue_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/staff_login_screen.dart';
 import '../../features/doctor/screens/doctor_consultation_screen.dart';
 import '../../features/doctor/screens/doctor_dashboard_screen.dart';
 import '../../features/doctor/screens/doctor_queue_screen.dart';
@@ -22,6 +23,7 @@ import '../../features/patient/screens/notifications_screen.dart';
 import '../../features/patient/screens/patient_history_screen.dart';
 import '../../features/patient/screens/patient_home_screen.dart';
 import '../../features/patient/screens/patient_profile_screen.dart';
+import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -31,17 +33,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/patient',
     redirect: (context, state) {
       final isLoggedIn = authState.user != null;
-      final isLoggingIn = state.matchedLocation == '/login';
+      final isAuthRoute = state.matchedLocation == '/login' ||
+                          state.matchedLocation == '/patient-register' ||
+                          state.matchedLocation == '/doctor-login' ||
+                          state.matchedLocation == '/admin-login';
 
-      if (!isLoggedIn && !isLoggingIn) {
+      if (!isLoggedIn && !isAuthRoute) {
         return '/login';
       }
 
-      if (isLoggedIn && isLoggingIn) {
-        final role = authState.user?.role ?? 'patient';
-        if (role == 'doctor') return '/doctor';
-        if (role == 'admin') return '/admin';
-        return '/patient';
+      if (isLoggedIn && isAuthRoute) {
+        return _dashboardForRole(authState.user!.role);
+      }
+
+      if (isLoggedIn) {
+        final role = authState.user!.role;
+        if (state.matchedLocation.startsWith('/doctor') && role != UserRole.doctor) {
+          return _dashboardForRole(role);
+        }
+        if (state.matchedLocation.startsWith('/admin') && role != UserRole.admin) {
+          return _dashboardForRole(role);
+        }
+        if (state.matchedLocation.startsWith('/patient') && role != UserRole.patient) {
+          return _dashboardForRole(role);
+        }
       }
 
       return null;
@@ -51,6 +66,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/patient-register',
+        builder: (context, state) => const LoginScreen(initialRegistration: true),
+      ),
+      GoRoute(
+        path: '/doctor-login',
+        builder: (context, state) => const DoctorLoginScreen(),
+      ),
+      GoRoute(
+        path: '/admin-login',
+        builder: (context, state) => const AdminLoginScreen(),
       ),
 
       // Patient Routes
@@ -200,3 +227,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
+
+String _dashboardForRole(UserRole role) {
+  switch (role) {
+    case UserRole.doctor:
+      return '/doctor';
+    case UserRole.admin:
+      return '/admin';
+    case UserRole.patient:
+      return '/patient';
+  }
+}

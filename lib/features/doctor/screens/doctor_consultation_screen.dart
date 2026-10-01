@@ -5,8 +5,9 @@ import 'package:intl/intl.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
-import '../../../data/mock/mock_data.dart';
+import '../../../models/appointment.dart';
 import '../../../models/consultation.dart';
+import '../../../providers/appointment_provider.dart';
 import '../../../providers/repository_providers.dart';
 
 class DoctorConsultationScreen extends ConsumerStatefulWidget {
@@ -36,15 +37,16 @@ class _MedicineItem {
 
 class _DoctorConsultationScreenState extends ConsumerState<DoctorConsultationScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _diagnosisController = TextEditingController(text: 'Acute Contact Dermatitis & Allergic Reaction');
-  final _notesController = TextEditingController(text: 'Avoid harsh chemical soaps. Apply cooling compress twice daily.');
-  final _bpController = TextEditingController(text: '120/80');
-  final _pulseController = TextEditingController(text: '74 bpm');
-  final _tempController = TextEditingController(text: '98.6 F');
-  final _spo2Controller = TextEditingController(text: '99%');
+  final _diagnosisController = TextEditingController();
+  final _notesController = TextEditingController();
+  final _bpController = TextEditingController();
+  final _pulseController = TextEditingController();
+  final _tempController = TextEditingController();
+  final _spo2Controller = TextEditingController();
 
   DateTime _followUpDate = DateTime.now().add(const Duration(days: 7));
   bool _isSaving = false;
+  Appointment? _appointment;
 
   final List<_MedicineItem> _medicines = [
     const _MedicineItem(
@@ -62,6 +64,19 @@ class _DoctorConsultationScreenState extends ConsumerState<DoctorConsultationScr
       timing: 'Apply thin layer on rash',
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppointment();
+  }
+
+  Future<void> _loadAppointment() async {
+    final appointment = await ref.read(appointmentRepositoryProvider).getAppointmentById(widget.appointmentId);
+    if (mounted && appointment != null) {
+      setState(() => _appointment = appointment);
+    }
+  }
 
   @override
   void dispose() {
@@ -148,40 +163,42 @@ class _DoctorConsultationScreenState extends ConsumerState<DoctorConsultationScr
     setState(() => _isSaving = true);
 
     try {
+      if (_appointment == null) {
+        throw Exception('Appointment not found');
+      }
+
       // 1. Mark appointment completed
       final apptRepo = ref.read(appointmentRepositoryProvider);
       await apptRepo.completeConsultation(widget.appointmentId);
 
-      // 2. Add consultation record to MockData
+      // 2. Add consultation record to Firestore
+      final consultationRepo = ref.read(consultationRepositoryProvider);
       final consultation = Consultation(
-        id: 'cn_${DateTime.now().millisecondsSinceEpoch}',
+        id: '',
         appointmentId: widget.appointmentId,
-        patientId: 'patient_001',
-        patientName: 'Arjun Sharma',
-        doctorId: 'doc_002',
-        doctorName: 'Dr. Priya Mehta',
-        doctorSpecialty: 'Dermatology',
-        departmentName: 'Dermatology',
+        patientId: _appointment!.patientId,
+        patientName: _appointment!.patientName,
+        doctorId: _appointment!.doctorId,
+        doctorName: _appointment!.doctorName,
+        doctorSpecialty: _appointment!.doctorSpecialty,
+        departmentName: _appointment!.departmentName,
         consultationDate: DateTime.now(),
         diagnosis: _diagnosisController.text.trim(),
-        prescription: 'Apply ointment and take antihistamine twice daily',
+        prescription: _medicines.map((m) => '${m.name} (${m.dosage}, ${m.frequency}) for ${m.duration} - ${m.timing}').join('\n'),
         notes: _notesController.text.trim(),
         medicines: _medicines.map((m) => '${m.name} (${m.dosage}, ${m.frequency})').toList(),
         followUpDate: DateFormat('yyyy-MM-dd').format(_followUpDate),
-        isPaid: true,
-        amountPaid: 650.0,
-        paymentMethod: 'Hospital Desk',
+        isPaid: _appointment!.isPaid,
+        amountPaid: _appointment!.totalAmount,
+        paymentMethod: _appointment!.paymentMethod ?? 'Hospital Desk',
       );
-      MockData.consultations.insert(0, consultation);
+      await consultationRepo.createConsultation(consultation);
 
       // 3. Mark queue token completed
       final queueRepo = ref.read(queueRepositoryProvider);
       final today = DateTime.now();
       final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      final queue = await queueRepo.getDoctorQueue('doc_002', date);
-      if (queue.currentToken != null) {
-        await queueRepo.markComplete('doc_002', queue.currentToken!.id);
-      }
+      await queueRepo.markComplete(_appointment!.doctorId, widget.appointmentId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,19 +251,24 @@ class _DoctorConsultationScreenState extends ConsumerState<DoctorConsultationScr
                   CircleAvatar(
                     radius: 26,
                     backgroundColor: AppColors.primarySurface,
-                    child: const Text('AS', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary)),
+                    child: Text(
+                      _appointment?.patientName.isNotEmpty == true 
+                          ? _appointment!.patientName.substring(0, 1).toUpperCase() 
+                          : 'P',
+                      style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary),
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Arjun Sharma', style: AppTextStyles.titleMedium),
-                        Text('32 Yrs • Male • UHID-2024-001',
+                        Text(_appointment?.patientName ?? 'Patient', style: AppTextStyles.titleMedium),
+                        Text('Token: ${_appointment?.tokenNumber ?? "-"} • ${_appointment?.timeSlot ?? "-"}',
                             style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                         const SizedBox(height: 2),
-                        Text('Allergies: Penicillin',
-                            style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
+                        Text('Department: ${_appointment?.departmentName ?? "-"}',
+                            style: AppTextStyles.caption.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),

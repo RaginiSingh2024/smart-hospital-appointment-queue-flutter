@@ -2,6 +2,7 @@ enum AppointmentStatus {
   pending,
   confirmed,
   checkedIn,
+  inQueue,
   inConsultation,
   completed,
   cancelled,
@@ -20,6 +21,8 @@ extension AppointmentStatusExtension on AppointmentStatus {
         return 'Confirmed';
       case AppointmentStatus.checkedIn:
         return 'Checked In';
+      case AppointmentStatus.inQueue:
+        return 'In Queue';
       case AppointmentStatus.inConsultation:
         return 'In Consultation';
       case AppointmentStatus.completed:

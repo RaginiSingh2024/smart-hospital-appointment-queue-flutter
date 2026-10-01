@@ -7,6 +7,8 @@ class Department {
   final bool isActive;
   final int totalDoctors;
   final String headDoctorName;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const Department({
     required this.id,
@@ -17,6 +19,8 @@ class Department {
     this.isActive = true,
     this.totalDoctors = 0,
     this.headDoctorName = '',
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory Department.fromMap(Map<String, dynamic> map) {
@@ -29,6 +33,8 @@ class Department {
       isActive: map['isActive'] as bool? ?? true,
       totalDoctors: map['totalDoctors'] as int? ?? 0,
       headDoctorName: map['headDoctorName'] as String? ?? '',
+      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt'] as String) : null,
+      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt'] as String) : null,
     );
   }
 
@@ -42,6 +48,8 @@ class Department {
       'isActive': isActive,
       'totalDoctors': totalDoctors,
       'headDoctorName': headDoctorName,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 
@@ -54,6 +62,8 @@ class Department {
     bool? isActive,
     int? totalDoctors,
     String? headDoctorName,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Department(
       id: id ?? this.id,
@@ -64,6 +74,8 @@ class Department {
       isActive: isActive ?? this.isActive,
       totalDoctors: totalDoctors ?? this.totalDoctors,
       headDoctorName: headDoctorName ?? this.headDoctorName,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

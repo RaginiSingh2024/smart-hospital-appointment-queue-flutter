@@ -55,11 +55,13 @@ class _DoctorQueueScreenState extends ConsumerState<DoctorQueueScreen> {
             onPressed: () async {
               if (nameController.text.trim().isEmpty) return;
               Navigator.pop(ctx);
-              final repo = ref.read(mockQueueRepositoryProvider);
+              final repo = ref.read(queueRepositoryProvider);
               final today = DateTime.now();
               final date = '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-              repo.addToQueue(
-                QueueModel(
+              await repo.addToQueue(
+                doctorId: _doctorId,
+                date: date,
+                queueModel: QueueModel(
                   id: 'emg_${DateTime.now().millisecondsSinceEpoch}',
                   doctorId: _doctorId,
                   patientId: 'patient_walkin',

@@ -84,7 +84,11 @@ class MockDoctorRepository implements DoctorRepository {
   @override
   Future<Doctor?> getDoctorByUserId(String userId) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    return _doctors.where((d) => d.userId == userId).firstOrNull;
+    print('🔥 MOCK DOCTOR REPO: Looking for doctor with userId: $userId');
+    print('🔥 MOCK DOCTOR REPO: Available doctor userIds: ${_doctors.map((d) => d.userId).toList()}');
+    final doctor = _doctors.where((d) => d.userId == userId).firstOrNull;
+    print('🔥 MOCK DOCTOR REPO: Found doctor: ${doctor?.id} - ${doctor?.name}');
+    return doctor;
   }
 
   @override
