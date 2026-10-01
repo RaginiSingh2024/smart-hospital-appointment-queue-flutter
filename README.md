@@ -248,89 +248,127 @@ lib/
 
 The following screenshots demonstrate the implemented application interfaces across patient, doctor, administrator, Firebase, and project workflows.
 
-### Patient Registration
+<table>
+  <tr>
+    <td align="center">
+      <strong>Patient Registration</strong><br><br>
+      <img src="./Screenshots/02_Patient_Registration.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Admin Login</strong><br><br>
+      <img src="./Screenshots/03_Admin_Login.png" width="400">
+    </td>
+  </tr>
 
-<p align="center"><img src="Screenshots/02_Patient_Registration.png" alt="Patient Registration" width="850"></p>
+  <tr>
+    <td align="center">
+      <strong>Patient Dashboard</strong><br><br>
+      <img src="./Screenshots/04_Patient_Dashboard.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Doctor Search</strong><br><br>
+      <img src="./Screenshots/05_Doctor_Search.png" width="400">
+    </td>
+  </tr>
 
-### Admin Login
+  <tr>
+    <td align="center">
+      <strong>Appointment Booking</strong><br><br>
+      <img src="./Screenshots/09_Appointment_Booking.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Booking Confirmation</strong><br><br>
+      <img src="./Screenshots/10_Booking_Confirmation.png" width="400">
+    </td>
+  </tr>
 
-<p align="center"><img src="Screenshots/03_Admin_Login.png" alt="Admin Login" width="850"></p>
+  <tr>
+    <td align="center">
+      <strong>Appointment Details</strong><br><br>
+      <img src="./Screenshots/Appointment_detail.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Home Dashboard</strong><br><br>
+      <img src="./Screenshots/Home_dashboard.png" width="400">
+    </td>
+  </tr>
 
-### Patient Dashboard
+  <tr>
+    <td align="center">
+      <strong>Notifications</strong><br><br>
+      <img src="./Screenshots/Notification.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Patient Profile</strong><br><br>
+      <img src="./Screenshots/Patient-profile.png" width="400">
+    </td>
+  </tr>
 
-<p align="center"><img src="Screenshots/04_Patient_Dashboard.png" alt="Patient Dashboard" width="850"></p>
+  <tr>
+    <td align="center">
+      <strong>QR Check-in</strong><br><br>
+      <img src="./Screenshots/QR_Check-in.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Admin Profile</strong><br><br>
+      <img src="./Screenshots/admin-profile.png" width="400">
+    </td>
+  </tr>
 
-### Doctor Search
+  <tr>
+    <td align="center">
+      <strong>Admin Dashboard</strong><br><br>
+      <img src="./Screenshots/admin_dashboard.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Doctor List</strong><br><br>
+      <img src="./Screenshots/dr-list.png" width="400">
+    </td>
+  </tr>
 
-<p align="center"><img src="Screenshots/05_Doctor_Search.png" alt="Doctor Search" width="850"></p>
+  <tr>
+    <td align="center">
+      <strong>Firebase Integration</strong><br><br>
+      <img src="./Screenshots/firebase.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Firebase Project Connected</strong><br><br>
+      <img src="./Screenshots/firebase_project_connected.png" width="400">
+    </td>
+  </tr>
 
-### Appointment Booking
+  <tr>
+    <td align="center">
+      <strong>GitHub Repository</strong><br><br>
+      <img src="./Screenshots/github.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Patient List</strong><br><br>
+      <img src="./Screenshots/patientlist.png" width="400">
+    </td>
+  </tr>
 
-<p align="center"><img src="Screenshots/09_Appointment_Booking.png" alt="Appointment Booking" width="850"></p>
+  <tr>
+    <td align="center">
+      <strong>Doctor Dashboard</strong><br><br>
+      <img src="./Screenshots/dr_dashboard.png" width="400">
+    </td>
+    <td align="center">
+      <strong>Doctor Profile</strong><br><br>
+      <img src="./Screenshots/dr_profile.png" width="400">
+    </td>
+  </tr>
 
-### Booking Confirmation
-
-<p align="center"><img src="Screenshots/10_Booking_Confirmation.png" alt="Booking Confirmation" width="850"></p>
-
-### Appointment Detail
-
-<p align="center"><img src="Screenshots/Appointment_detail.png" alt="Appointment Detail" width="850"></p>
-
-### Home Dashboard
-
-<p align="center"><img src="Screenshots/Home_dashboard.png" alt="Home Dashboard" width="850"></p>
-
-### Notifications
-
-<p align="center"><img src="Screenshots/Notification.png" alt="Notifications" width="850"></p>
-
-### Patient Profile
-
-<p align="center"><img src="Screenshots/Patient-profile.png" alt="Patient Profile" width="850"></p>
-
-### QR Check-in
-
-<p align="center"><img src="Screenshots/QR_Check-in.png" alt="QR Check-in" width="850"></p>
-
-### Admin Profile
-
-<p align="center"><img src="Screenshots/admin-profile.png" alt="Admin Profile" width="850"></p>
-
-### Admin Dashboard
-
-<p align="center"><img src="Screenshots/admin_dashboard.png" alt="Admin Dashboard" width="850"></p>
-
-### Doctor List
-
-<p align="center"><img src="Screenshots/dr-list.png" alt="Doctor List" width="850"></p>
-
-### Doctor Dashboard
-
-<p align="center"><img src="Screenshots/dr_dashboard.png" alt="Doctor Dashboard" width="850"></p>
-
-### Doctor Profile
-
-<p align="center"><img src="Screenshots/dr_profile.png" alt="Doctor Profile" width="850"></p>
-
-### Doctor Today's Appointments
-
-<p align="center"><img src="Screenshots/dr_today_appoinment.png" alt="Doctor Today's Appointments" width="850"></p>
-
-### Firebase
-
-<p align="center"><img src="Screenshots/firebase.png" alt="Firebase" width="850"></p>
-
-### Firebase Project Connected
-
-<p align="center"><img src="Screenshots/firebase_project_connected.png" alt="Firebase Project Connected" width="850"></p>
-
-### GitHub Repository
-
-<p align="center"><img src="Screenshots/github.png" alt="GitHub Repository" width="850"></p>
-
-### Patient List
-
-<p align="center"><img src="Screenshots/patientlist.png" alt="Patient List" width="850"></p>
+  <tr>
+    <td align="center">
+      <strong>Doctor Today's Appointments</strong><br><br>
+      <img src="./Screenshots/dr_today_appoinment.png" width="400">
+    </td>
+    <td align="center">
+      <!-- Empty cell for alignment -->
+    </td>
+  </tr>
+</table>
 
 ## 📊 Analytics
 
